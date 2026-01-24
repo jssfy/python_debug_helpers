@@ -1,0 +1,56 @@
+# Python 项目单元测试 - 推送到 main 分支时自动运行
+name: Python Unit Tests
+
+on:
+  push:
+    branches: [main]  # 仅在推送到 main 分支时触发
+  pull_request:
+    branches: [main]  # 也可在 PR 时运行
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
+      fail-fast: false  # 一个版本失败不影响其他版本继续测试
+    
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+    
+    - name: 设置 Python ${{ matrix.python-version }} 环境
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'  # 自动缓存 pip 依赖
+    
+    - name: 显示 Python 版本
+      run: |
+        python --version
+        pip --version
+    
+    - name: 升级 pip
+      run: |
+        python -m pip install --upgrade pip
+    
+    - name: 安装项目和开发依赖
+      run: |
+        pip install -e '.[dev]'
+    
+    - name: 显示已安装的包
+      run: |
+        pip list
+    
+    - name: 运行单元测试
+      run: |
+        pytest tests/ -v --cov=src/debug_helpers --cov-report=term-missing --cov-report=xml
+    
+    - name: 上传覆盖率报告到 Codecov
+      if: success() && matrix.python-version == '3.11'
+      uses: codecov/codecov-action@v4
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        files: ./coverage.xml
+        fail_ci_if_error: false
+        verbose: true
