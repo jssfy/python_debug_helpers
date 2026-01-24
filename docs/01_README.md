@@ -45,12 +45,21 @@
 |------|------|
 | [07_makefile_guide.md](07_makefile_guide.md) | 🛠️ Makefile 使用指南 |
 
+### GitHub Actions 文档
+
+| 文件 | 说明 |
+|------|------|
+| [03_github_actions_explained.md](03_github_actions_explained.md) | 🤖 GitHub Actions 工作原理 |
+| [04_pr_actions_timing.md](04_pr_actions_timing.md) | ⏱️ PR 触发机制详解 |
+| [04_setup_pypi_tokens.md](04_setup_pypi_tokens.md) | 🔐 PyPI Token 配置指南 |
+
 ### Issue 记录
 
 | 文件 | 说明 |
 |------|------|
 | [08_issue_name_conflict.md](08_issue_name_conflict.md) | ⚠️ PyPI 包名冲突 issue |
 | [09_rename_to_debug_helpers.md](09_rename_to_debug_helpers.md) | 🔄 改名为 debug-helpers 指南 |
+| [13_issue_github_actions_permissions.md](13_issue_github_actions_permissions.md) | 🔒 GitHub Actions 权限错误 |
 
 ---
 
