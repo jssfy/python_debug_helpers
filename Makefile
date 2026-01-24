@@ -89,7 +89,17 @@ uninstall:
 # 运行单元测试
 test:
 	@echo "==> 运行单元测试..."
-	pytest tests/ -v
+	@echo ""
+	@if command -v pytest >/dev/null 2>&1; then \
+		echo "使用 pytest 运行测试..."; \
+		pytest tests/ -v; \
+	else \
+		echo "使用 unittest 运行测试..."; \
+		python -m unittest discover -s tests -v; \
+	fi
+	@echo ""
+	@echo "💡 提示: 安装 pytest 可以获得更好的测试体验"
+	@echo "   pip install -e '.[dev]'"
 
 # 运行示例代码
 example:
