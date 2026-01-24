@@ -1,0 +1,55 @@
+# 发布到 PyPI - 创建新 tag 时自动触发
+name: Publish to PyPI
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'  # 匹配 v0.1.0, v1.2.3 等格式的 tag
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+    
+    - name: 设置 Python 环境
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    
+    - name: 安装构建工具
+      run: |
+        python -m pip install --upgrade pip
+        pip install build twine
+    
+    - name: 构建分发包
+      run: |
+        python -m build
+    
+    - name: 检查分发包
+      run: |
+        twine check dist/*
+    
+    - name: 发布到 TestPyPI
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ secrets.TESTPYPI_API_TOKEN }}
+      run: |
+        twine upload --repository testpypi dist/* --skip-existing
+    
+    - name: 发布到 PyPI
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+      run: |
+        twine upload dist/*
+    
+    - name: 创建 GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: dist/*
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
