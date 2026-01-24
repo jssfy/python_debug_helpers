@@ -21,9 +21,9 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/example/example-package"
-Repository = "https://github.com/example/example-package"
-Issues = "https://github.com/example/example-package/issues"
+Homepage = "https://github.com/jssfy/python_debug_helpers"
+Repository = "https://github.com/jssfy/python_debug_helpers"
+Issues = "https://github.com/jssfy/python_debug_helpers/issues"
 
 [build-system]
 requires = ["hatchling"]
