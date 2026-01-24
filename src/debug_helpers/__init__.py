@@ -1,6 +1,6 @@
 """Python 调试工具包"""
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 
 def hello(name: str) -> str:
     """返回问候语"""
