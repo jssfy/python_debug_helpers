@@ -151,6 +151,11 @@ python -m build
 
 ```
 python_debug_helpers/
+├── .github/
+│   └── workflows/          # GitHub Actions 配置
+│       ├── test.yml       # 自动测试（推送/PR 触发）
+│       ├── publish.yml    # 自动发布（tag 触发）
+│       └── README.md      # CI/CD 配置说明
 ├── src/
 │   └── debug_helpers/      # 源代码
 │       ├── __init__.py
@@ -199,7 +204,36 @@ python_debug_helpers/
 
 ## 发布流程
 
-### 使用 Makefile（推荐）
+### 自动发布（GitHub Actions）
+
+项目配置了 GitHub Actions 实现自动化 CI/CD：
+
+**自动测试**（推送到 main 分支或 PR 时触发）：
+- 自动运行单元测试（Python 3.9 ~ 3.13）
+- 生成覆盖率报告并上传到 Codecov
+
+**自动发布**（创建 tag 时触发）：
+```bash
+# 1. 更新版本号（pyproject.toml 和 __init__.py）
+# 2. 提交并推送
+git add . && git commit -m "Bump version to 0.3.1" && git push
+
+# 3. 创建并推送 tag，触发自动发布
+git tag v0.3.1
+git push origin v0.3.1
+```
+
+推送 `v*.*.*` 格式的 tag 后，GitHub Actions 会自动：
+1. 构建分发包
+2. 发布到 TestPyPI
+3. 发布到 PyPI
+4. 创建 GitHub Release
+
+**配置要求**：需在 GitHub 仓库 Settings → Secrets 中配置 `PYPI_API_TOKEN` 和 `TESTPYPI_API_TOKEN`。
+
+详见：[GitHub Actions 配置说明](.github/workflows/README.md)
+
+### 手动发布（Makefile）
 
 ```bash
 # 1. 发布到 TestPyPI 测试
@@ -215,7 +249,7 @@ make publish-pypi
 make install
 ```
 
-### 使用脚本
+### 手动发布（脚本）
 
 ```bash
 # 发布到 TestPyPI
