@@ -74,6 +74,18 @@ def _format_dict_recursive(data: Any, indent: int = 0) -> str:
         elif hasattr(data, 'value') and hasattr(data, 'name'):
             # 处理枚举对象
             return json.dumps(data.value, ensure_ascii=False)
+        elif hasattr(data, 'model_dump') and callable(getattr(data, 'model_dump')):
+            # Pydantic v2: model_dump() 会展开完整嵌套（含 original_data[].messages[] 等）
+            try:
+                return _format_dict_recursive(data.model_dump(mode='json'), indent)
+            except (TypeError, ValueError):
+                return _format_dict_recursive(data.model_dump(), indent)
+        elif hasattr(data, 'dict') and callable(getattr(data, 'dict')):
+            # Pydantic v1: .dict() 展开完整嵌套
+            try:
+                return _format_dict_recursive(data.dict(), indent)
+            except (TypeError, ValueError):
+                return _format_dict_recursive(data.__dict__, indent)
         elif hasattr(data, '__dict__'):
             # 处理其他有__dict__属性的对象
             return _format_dict_recursive(data.__dict__, indent)
