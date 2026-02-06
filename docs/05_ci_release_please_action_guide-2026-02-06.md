@@ -457,6 +457,31 @@ make release-as V=0.4.3
 
 **注意：** `Release-As` 是一次性指令，只影响下一次 Release PR。后续发版恢复自动计算。
 
+### Release PR 的 commits 页看不到我的功能 commit
+
+**现象：** push 了多个 feat/fix commit 到 main，但 Release PR 的 commits 页只显示 1 个 commit（`release: 0.4.3`）。
+
+**这是正常行为。** Release PR 的方向是：
+
+```
+release-please--branches--main (head) → main (base)
+```
+
+PR 的 commits 页只显示 **head 分支比 base 分支多出来的 commit**：
+
+| commit | 所在分支 | 出现在 PR commits 页 |
+|--------|---------|:-------------------:|
+| `feat: add xxx` | main（base 端） | **不会** |
+| `fix: fix bug` | main（base 端） | **不会** |
+| `chore: prepare release` | main（base 端） | **不会** |
+| `release: 0.4.3`（改版本号 + CHANGELOG） | release-please 分支（head 端） | **会** |
+
+你的功能 commit 在 main 上（base），Release Please 的版本变更 commit 在 release-please 分支上（head），所以 commits 页只看到 1 个 commit。
+
+**但这些功能 commit 会体现在 PR 描述的 CHANGELOG 中** — Release Please 扫描了 main 上自上次发版以来的所有 commit，把它们按 type 分组列在了 PR body 里。
+
+这正是 Release PR 的设计：**不包含功能代码（已经在 main 上），只包含版本号 + CHANGELOG 的变更。**
+
 ## 注意事项
 
 1. **仓库权限设置** — 首次引入必须开启 Actions 创建 PR 的权限（见上方）
