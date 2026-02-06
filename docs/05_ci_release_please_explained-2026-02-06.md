@@ -48,14 +48,55 @@ jobs:
 
 evermemos-python 的 commit 作者 `stainless-app[bot]` 是 **Stainless 平台的私有 GitHub App**，属于 Stainless SDK 生成服务的一部分，**不对外开放**。
 
-它的行为与 GitHub Action 方式相同（监听 push → 分析 commit → 创建/更新 PR → 合入后创建 Release），但运行在 Stainless 自己的服务器上：
+发版逻辑与 GitHub Action 方式完全相同（push 到 main → 分析 commit → 创建 Release PR → 合入后创建 tag），只是多了一个"SDK 代码生成"的前置步骤，且运行在 Stainless 自己的服务器上。
 
-1. App 自动监听 push 到 main 的事件
-2. 读取仓库中的 `release-please-config.json` 获取配置
-3. 分析新增的 commits，自动创建/更新 Release PR
-4. PR 合入后自动创建 GitHub Release + tag
+### Stainless App 完整流程（从 git 历史还原）
 
-**无需在仓库中创建任何 release-please 相关的 workflow 文件。**
+```
+1. Stainless 平台根据 OpenAPI spec 自动生成 SDK 代码
+   → stainless-app[bot] 推送到 generated 分支
+     commit: feat(api): api update
+     commit: chore: update SDK settings
+     commit: chore(internal): version bump
+
+2. generated 分支的代码合入 main
+
+3. stainless-app[bot] 检测到 main 有新 commit
+   → 分析 Conventional Commits
+   → 创建/更新 Release PR（分支: release-please--branches--main--changes--next）
+     commit: release: 0.3.11
+
+4. evermemos 合入 Release PR
+   → 自动创建 tag v0.3.11 + GitHub Release
+
+5. publish-pypi.yml 触发（on: release published）
+   → 发布到 PyPI
+```
+
+**实际 git 历史印证了这个模式：**
+
+```
+stainless-app[bot] | feat(api): api update          ← 步骤 1-2: 生成代码到 main
+stainless-app[bot] | feat(api): api update
+stainless-app[bot] | chore: update SDK settings
+evermemos          | Merge pull request #19 ...       ← 步骤 4: 合入 Release PR
+stainless-app[bot] | release: 0.3.11                 ← 步骤 3: Release PR 的 commit
+stainless-app[bot] | feat(api): api update           ← 下一轮步骤 1-2
+evermemos          | Merge pull request #17 ...
+stainless-app[bot] | release: 0.4.0
+```
+
+**分支结构：**
+
+```
+generated 分支 ← stainless-app 推送生成代码（领先于 main）
+      ↓ 合入
+main 分支      ← 功能代码 + Release PR 合入
+      ↑
+next 分支      ← 与 main 同步（指向同一 commit）
+      ↑
+release-please--branches--main--changes--next ← Release PR 的 head 分支
+```
 
 ### 为什么 Stainless 用 App 而不是 Action
 
@@ -71,8 +112,11 @@ Stainless 统一管理几百个自动生成的 SDK 仓库，用一个集中的 G
 | CI 分钟消耗 | 消耗 Actions 分钟数 | **不消耗** |
 | 配置方式 | 仓库内放 workflow + config.json | 仓库内只放 config.json |
 | commit 作者 | `github-actions[bot]` | `stainless-app[bot]` |
+| 代码来源 | 开发者手动 push | Stainless 自动生成 → `generated` 分支 |
 | 定制能力 | 完全自定义 | 受限于 App 提供的配置项 |
 | 适用场景 | 开源项目、个人项目 | 企业平台统一管理 |
+
+**核心逻辑完全一样：push 到 main → 分析 commit → 创建 Release PR → 合入后创建 tag/release → 发布。** 区别只是"谁来执行"和"代码从哪来"。
 
 ## evermemos-python 的配置文件解读
 
