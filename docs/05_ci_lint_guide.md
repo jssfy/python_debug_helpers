@@ -407,13 +407,41 @@ Post 步骤的执行顺序与定义顺序**相反**（后进先出），所以�
 
 ```
 push/PR to main
-    ├── lint.yml   → 静态检查（ruff + pyright + mypy）    1 个 job
-    └── test.yml   → 单元测试（pytest，多 Python 版本矩阵）  5 个并行 job
+    ├── lint.yml    → 静态检查（ruff + pyright + mypy）    1 个 job
+    ├── build.yml   → 构建验证（build + twine check + install）1 个 job
+    └── test.yml    → 单元测试（pytest，多 Python 版本矩阵）  5 个并行 job
 ```
 
-两个 Workflow **并行运行**，互不依赖。
+三个 Workflow **并行运行**，互不依赖。
 
-### 3.6 test workflow 实际执行流程（与 lint 对比）
+### 3.6 CI 设计模式：lint 与 format 的分离
+
+> **核心原则：CI 只做检查（lint），不做修改（format）。format 留给开发者在本地执行。**
+
+这是 Python 项目的常见 CI 设计模式，evermemos-python 的 `ci.yml` 也采用相同策略：
+
+| 场景 | 执行的脚本 | 是否修改代码 | 说明 |
+|------|-----------|:-----------:|------|
+| CI（push/PR 触发） | `./scripts/lint` | **否** | 只检查，有问题则失败，不动代码 |
+| 本地开发（提交前） | `./scripts/format` | **是** | 自动修复格式和 lint 问题 |
+
+**工作流程：**
+
+```
+开发者本地：./scripts/format → 自动修复 → git commit → git push
+                                                         ↓
+CI 服务器：./scripts/lint → 只读检查 → 通过 ✅ / 失败 ❌
+```
+
+**为什么 CI 不跑 format？**
+
+1. **可重复性** — CI 应该是纯检查，不应该在 runner 上修改代码再提交回来
+2. **职责清晰** — 代码修改是开发者的责任，CI 只负责"守门"
+3. **避免意外** — 如果 CI 自动修复并推送，可能与开发者正在进行的工作冲突
+
+**如果忘了在本地跑 format 就提交，CI 的 lint 会报错失败**，提醒开发者回去格式化后重新提交。
+
+### 3.7 test workflow 实际执行流程（与 lint 对比）
 
 `test.yml` 使用 **matrix 策略**，1 个 job 定义展开为 5 个并行 job：
 
@@ -487,7 +515,7 @@ test.yml 定义了 1 个 job + matrix
 └──────────────────────────────────────────────────────────────┘
 ```
 
-### 3.7 lint vs test 差异总结
+### 3.8 lint vs test 差异总结
 
 | 维度 | lint workflow | test workflow |
 |------|-------------|--------------|

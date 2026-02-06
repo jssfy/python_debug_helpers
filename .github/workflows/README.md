@@ -22,7 +22,23 @@
 5. 生成覆盖率报告
 6. 上传覆盖率到 Codecov（仅 Python 3.11）
 
-### 2. 发布到 PyPI (`publish.yml`)
+### 2. 构建验证 (`build.yml`)
+
+**触发条件**:
+- 推送到 `main` 分支
+- 向 `main` 分支提交 Pull Request
+
+**执行内容**:
+1. 检出代码
+2. 设置 Python 环境（3.12）
+3. 安装构建工具（build、twine）
+4. 构建分发包（wheel + sdist）
+5. 检查分发包元数据（twine check）
+6. 安装 wheel 并验证 import
+
+**本地等效操作**: `make build`
+
+### 3. 发布到 PyPI (`publish.yml`)
 
 **触发条件**:
 - 推送 tag（格式：`v*.*.*`，如 `v0.3.0`）

@@ -1,0 +1,40 @@
+# 构建验证 - 推送到 main 分支或 PR 时自动运行
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+
+    - name: 设置 Python 环境
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+        cache: 'pip'
+
+    - name: 安装构建工具
+      run: |
+        python -m pip install --upgrade pip
+        pip install build twine
+
+    - name: 构建分发包
+      run: python -m build
+
+    - name: 检查分发包
+      run: twine check dist/*
+
+    - name: 验证安装
+      run: |
+        pip install dist/*.whl
+        python -c "from debug_helpers import hello, add, print_dict; print('import OK')"
