@@ -313,9 +313,147 @@ T4: 你觉得可以发了       → 合入 PR → 发一次 0.5.0（包含以上
 
 如果确实想要"每次 push 自动发版"（不需要人工门），那不需要 Release Please，直接在 CI 里自动 bump + tag 就行。但大多数项目需要控制发版节奏，这就是 Release PR 存在的意义。
 
+## 首次引入必需的仓库设置
+
+Release Please Action 需要创建 PR 的权限，GitHub 仓库默认不允许 Actions 创建 PR，**必须手动开启**。
+
+### 错误现象
+
+首次运行时，Release Please 能成功创建分支和 commit，但在创建 PR 时报错：
+
+```
+Error: release-please failed: GitHub Actions is not permitted to create or
+approve pull requests.
+```
+
+### 解决步骤
+
+到 GitHub 仓库设置中开启权限：
+
+```
+Settings → Actions → General → Workflow permissions
+```
+
+需要勾选两项：
+
+| 设置项 | 说明 |
+|--------|------|
+| **Read and write permissions** | 允许 Actions 写入仓库（创建分支、commit、tag） |
+| **Allow GitHub Actions to create and approve pull requests** | 允许 Actions 创建 PR ← **这个是关键** |
+
+保存后，手动重跑 release-please workflow 即可：`Actions → Release Please → Run workflow`，或等下次 push 到 main 自动触发。
+
+### 为什么默认不开启
+
+这是 GitHub 的安全策略。允许 Actions 创建 PR 意味着自动化流程可以提交代码变更，对于不了解的用户可能带来风险。Release Please 只创建版本号 + CHANGELOG 的变更 PR，风险可控。
+
+### 开启后会不会导致 PR 被自动 approve
+
+**不会。** "Allow GitHub Actions to create and approve pull requests" 是指允许 Actions **有能力**创建和 approve PR，不是自动 approve 所有 PR。
+
+Release Please Action 的代码里只调用了 create PR API，没有调用 approve API：
+
+```
+开启权限后 Release Please 做的事：
+  ✅ 创建分支
+  ✅ 创建 commit（改版本号 + CHANGELOG）
+  ✅ 创建 PR
+  ❌ 不会 approve PR
+  ❌ 不会 merge PR
+  ❌ 不会影响其他 PR
+```
+
+创建的 PR 仍然需要人手动点 Merge。
+
+**如果担心风险，可以加 branch protection rule 做双重保障：**
+
+```
+Settings → Branches → Add rule → main
+  ✅ Require a pull request before merging
+  ✅ Require approvals: 1
+  ❌ 不勾选 "Allow specified actors to bypass required pull requests"
+```
+
+这样即使某个 Action 意外调用了 approve，仍然需要**真人** approve 才能合入。
+
+## 常见问题
+
+### PR 标题版本号与代码不一致
+
+**现象：** 手动修改了 Release PR 标题（如改为 `release: 0.4.3`），但 PR 内的代码变更仍然是 `0.5.0`。
+
+**原因：** PR 标题只是显示用的，实际版本由 PR 中 4 个文件的内容决定：
+
+```
+.release-please-manifest.json  → 0.5.0
+pyproject.toml                 → 0.5.0
+src/debug_helpers/__init__.py  → 0.5.0
+CHANGELOG.md                   → ## [0.5.0]
+```
+
+只改标题不会改代码内容。
+
+**Release Please 如何决定版本号：**
+
+```
+上次发版 v0.4.2 以来的 commit:
+  feat: add xxx   ← feat 类型 → minor bump
+  ci: add yyy     ← ci 类型 → 不影响版本
+
+结果: 0.4.2 + feat → 0.5.0（minor bump）
+如果只有 fix → 0.4.3（patch bump）
+```
+
+**解决方式：**
+
+| 目标 | 操作 |
+|------|------|
+| 接受 0.5.0（推荐） | 把 PR 标题改回 `release: 0.5.0`，直接合入 |
+| 强制使用 0.4.3 | 关闭当前 PR，用 `Release-As` 指令覆盖（见下方） |
+
+**`Release-As` 指令用法 — 强制指定版本号：**
+
+```bash
+# 关闭当前 Release PR 后，推送一个带 Release-As footer 的 commit
+# 方式一：引号内真实换行（subject 和 footer 之间必须有空行）
+git commit --allow-empty -m "chore: prepare release
+
+Release-As: 0.4.3"
+
+# 方式二（推荐）：用多个 -m 参数（git 自动在两个 -m 之间插入空行）
+git commit --allow-empty -m "chore: prepare release" -m "Release-As: 0.4.3"
+```
+
+然后推送：
+
+```bash
+git push origin main
+```
+
+Release Please 读取 commit footer 中的 `Release-As: 0.4.3`，强制使用该版本号创建新的 Release PR，不再根据 commit type 自动计算。
+
+**`Release-As` 必须放在 footer 位置（与 subject 之间有空行）。** 这是 git commit message 的标准格式：
+
+```
+第 1 行: subject（主题）
+                          ← 空行（必须）
+第 3 行起: body / footer
+```
+
+| 写法 | Release Please 能否识别 | 原因 |
+|------|:----------------------:|------|
+| `-m "chore: release" -m "Release-As: 0.4.3"` | **能** | 两个 `-m` 自动插入空行，footer 正确 |
+| `"chore: release\n\nRelease-As: 0.4.3"` | **能** | 空行分隔，footer 正确 |
+| `"chore: release\nRelease-As: 0.4.3"` | **不能** | 无空行，被当作 body 文本 |
+| `"chore: release Release-As: 0.4.3"` | **不能** | 全在 subject 行，无 footer |
+
+**注意：** `Release-As` 是一次性指令，只影响下一次 Release PR。后续发版恢复自动计算。
+
 ## 注意事项
 
-1. **commit message 必须遵循规范** — 不规范的 commit 不会被识别，不会触发版本 bump
-2. **首次引入需要对齐版本** — `.release-please-manifest.json` 中的版本号必须与 `pyproject.toml` 一致
-3. **CHANGELOG 格式会改变** — Release Please 生成的格式与当前手写的不同，首次引入后历史 CHANGELOG 保持原样，新版本用新格式
-4. **不要再手动打 tag** — 引入后由 Release Please 管理 tag，手动打 tag 会导致版本状态混乱
+1. **仓库权限设置** — 首次引入必须开启 Actions 创建 PR 的权限（见上方）
+2. **commit message 必须遵循规范** — 不规范的 commit 不会被识别，不会触发版本 bump
+3. **首次引入需要对齐版本** — `.release-please-manifest.json` 中的版本号必须与 `pyproject.toml` 一致
+4. **CHANGELOG 格式会改变** — Release Please 生成的格式与当前手写的不同，首次引入后历史 CHANGELOG 保持原样，新版本用新格式
+5. **不要再手动打 tag** — 引入后由 Release Please 管理 tag，手动打 tag 会导致版本状态混乱
+6. **不要只改 PR 标题来换版本号** — 标题是显示用的，要改版本号用 `Release-As` 指令
