@@ -1,4 +1,4 @@
-.PHONY: help install-local install-test install uninstall test example clean build publish-test publish-pypi
+.PHONY: help install-local install-test install uninstall test example clean build publish-test publish-pypi release-as
 
 # 默认目标：显示帮助信息
 help:
@@ -19,8 +19,9 @@ help:
 	@echo "  make build          - 构建分发包"
 	@echo ""
 	@echo "发布命令："
-	@echo "  make publish-test   - 发布到 TestPyPI"
-	@echo "  make publish-pypi   - 发布到正式 PyPI"
+	@echo "  make release-as V=x.y.z - 强制指定版本号发版（Release Please）"
+	@echo "  make publish-test       - 发布到 TestPyPI"
+	@echo "  make publish-pypi       - 发布到正式 PyPI"
 	@echo ""
 	@echo "常用工作流："
 	@echo "  开发阶段："
@@ -146,6 +147,44 @@ build: clean
 	@echo "✅ 构建完成！"
 	@echo "生成的文件："
 	@ls -lh dist/
+
+# 强制指定版本号发版（通过 Release Please 的 Release-As 指令）
+# 用法: make release-as V=0.4.3
+release-as:
+ifndef V
+	@echo "❌ 请指定版本号，用法: make release-as V=x.y.z"
+	@echo "   示例: make release-as V=0.4.3"
+	@exit 1
+endif
+	@CURRENT=$$(grep "version = " pyproject.toml | head -1 | cut -d'"' -f2); \
+	echo ""; \
+	echo "=========================================="; \
+	echo "  Release Please: 强制指定版本号"; \
+	echo "=========================================="; \
+	echo ""; \
+	echo "当前版本: $$CURRENT"; \
+	echo "目标版本: $(V)"; \
+	echo ""; \
+	read -p "确认发版到 $(V)? (y/n) " -n 1 -r; \
+	echo ""; \
+	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
+		echo ""; \
+		echo "==> 创建 Release-As commit..."; \
+		git commit --allow-empty -m "chore: prepare release $(V)" -m "Release-As: $(V)"; \
+		echo ""; \
+		echo "==> 推送到 main..."; \
+		git push origin main; \
+		echo ""; \
+		echo "✅ 已推送！Release Please 将创建 release: $(V) 的 PR"; \
+		echo ""; \
+		echo "后续步骤:"; \
+		echo "  1. 等待 Release Please 创建/更新 Release PR"; \
+		echo "  2. 在 GitHub 上审核并合入 PR"; \
+		echo "  3. publish.yml 自动触发 → 发布到 PyPI"; \
+	else \
+		echo "❌ 取消"; \
+		exit 1; \
+	fi
 
 # 发布到 TestPyPI
 publish-test: build

@@ -447,6 +447,14 @@ Release Please 读取 commit footer 中的 `Release-As: 0.4.3`，强制使用该
 | `"chore: release\nRelease-As: 0.4.3"` | **不能** | 无空行，被当作 body 文本 |
 | `"chore: release Release-As: 0.4.3"` | **不能** | 全在 subject 行，无 footer |
 
+**Makefile 快捷命令：**
+
+```bash
+make release-as V=0.4.3
+```
+
+等效于手动执行 commit + push，会先确认再操作。
+
 **注意：** `Release-As` 是一次性指令，只影响下一次 Release PR。后续发版恢复自动计算。
 
 ## 注意事项
