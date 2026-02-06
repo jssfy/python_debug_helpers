@@ -1,5 +1,27 @@
 # 更新日志
 
+## [0.4.3](https://github.com/jssfy/python_debug_helpers/compare/v0.4.2...v0.4.3) (2026-02-06)
+
+
+### Features
+
+* add linting and formatting tools ([7fe322c](https://github.com/jssfy/python_debug_helpers/commit/7fe322c51bb6c7a690ceb55ffd37a5c102693bc0))
+* adds CI build job and updates documentation ([81c640f](https://github.com/jssfy/python_debug_helpers/commit/81c640f05e591b654f972c1d7c12827142724e4c))
+* adds release_please support ([f89fa25](https://github.com/jssfy/python_debug_helpers/commit/f89fa25aef192772b721abbb74b77f554ff38e9e))
+
+
+### Chores
+
+* prepare release ([03b18d2](https://github.com/jssfy/python_debug_helpers/commit/03b18d2cad8da931c915649cb28aa3bf9928fbc1))
+
+
+### Documentation
+
+* adds explanations for github actions ([b5380ce](https://github.com/jssfy/python_debug_helpers/commit/b5380cef485c2cfcc7f2fdec903e64f7829c7e62))
+* explains how tag triggers publish workflow ([aff38b9](https://github.com/jssfy/python_debug_helpers/commit/aff38b99cd97a1ef53b35176f8b902004ffdd872))
+* explans why no main commits are shown in pr ([b650e88](https://github.com/jssfy/python_debug_helpers/commit/b650e885913e56d89eb956a5a0c6550f060cce98))
+* how stainless works ([da3a84b](https://github.com/jssfy/python_debug_helpers/commit/da3a84b346f8c47f722b8235036dee8b366bc223))
+
 ## [0.4.0] - 2026-01-24
 
 ### 重大变更
