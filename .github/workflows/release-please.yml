@@ -1,0 +1,22 @@
+# 自动化发版 - 推送到 main 分支时分析 commit 创建/更新 Release PR
+name: Release Please
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    name: release-please
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+    - name: 运行 Release Please
+      uses: googleapis/release-please-action@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}

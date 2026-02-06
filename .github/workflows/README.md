@@ -37,10 +37,25 @@
 
 **本地等效操作**: `make build`
 
-### 3. 发布到 PyPI (`publish.yml`)
+### 3. 自动化发版 (`release-please.yml`)
 
 **触发条件**:
-- 推送 tag（格式：`v*.*.*`，如 `v0.3.0`）
+- 推送到 `main` 分支
+
+**执行内容**:
+1. 分析 Conventional Commits 格式的 commit message
+2. 自动决定版本号（feat → minor, fix → patch）
+3. 创建/更新 Release PR（包含版本号变更 + CHANGELOG）
+4. PR 合入后自动创建 tag + GitHub Release
+
+**配置文件**:
+- `release-please-config.json` — 行为配置（release-type、changelog-sections 等）
+- `.release-please-manifest.json` — 当前版本状态
+
+### 4. 发布到 PyPI (`publish.yml`)
+
+**触发条件**:
+- 推送 tag（格式：`v*.*.*`，由 Release Please 自动创建）
 
 **执行内容**:
 1. 检出代码
@@ -93,37 +108,30 @@ git commit -m "Update code"
 git push origin main
 ```
 
-### 发布新版本
+### 发布新版本（Release Please 自动化）
 
-1. **更新版本号**
-   ```bash
-   # 编辑 pyproject.toml
-   version = "0.3.1"
-   
-   # 编辑 src/debug_helpers/__init__.py
-   __version__ = "0.3.1"
-   
-   # 更新 CHANGELOG.md
-   ```
+使用 Conventional Commits 格式提交，版本号、CHANGELOG、tag 全部自动处理：
 
-2. **提交更改**
+1. **正常开发提交**（commit message 遵循 Conventional Commits）
    ```bash
-   git add pyproject.toml src/debug_helpers/__init__.py CHANGELOG.md
-   git commit -m "Bump version to 0.3.1"
+   git commit -m "feat: add new helper function"
    git push origin main
    ```
 
-3. **创建 tag 并推送**
-   ```bash
-   git tag v0.3.1
-   git push origin v0.3.1
-   ```
+2. **等待 Release PR**
+   - Release Please 自动分析 commit，创建 Release PR
+   - PR 内容：版本号变更 + 自动生成的 CHANGELOG
 
-4. **自动发布**
-   - GitHub Actions 会自动触发
-   - 先发布到 TestPyPI
-   - 再发布到 PyPI
-   - 创建 GitHub Release
+3. **审核并合入 Release PR**
+   - 在 GitHub 上审核 PR 内容
+   - 合入后自动创建 tag + GitHub Release
+   - `publish.yml` 自动触发 → 发布到 PyPI
+
+**Commit type 与版本号：**
+- `feat:` → minor bump（0.4.2 → 0.5.0）
+- `fix:` → patch bump（0.4.2 → 0.4.3）
+- `feat!:` / `BREAKING CHANGE` → major bump（0.4.2 → 1.0.0）
+- `chore:` / `docs:` / `ci:` → 不触发版本 bump
 
 ---
 

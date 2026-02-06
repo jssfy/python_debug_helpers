@@ -407,12 +407,16 @@ Post 步骤的执行顺序与定义顺序**相反**（后进先出），所以�
 
 ```
 push/PR to main
-    ├── lint.yml    → 静态检查（ruff + pyright + mypy）    1 个 job
-    ├── build.yml   → 构建验证（build + twine check + install）1 个 job
-    └── test.yml    → 单元测试（pytest，多 Python 版本矩阵）  5 个并行 job
+    ├── lint.yml            → 静态检查（ruff + pyright + mypy）    1 个 job
+    ├── build.yml           → 构建验证（build + twine check + install）1 个 job
+    ├── test.yml            → 单元测试（pytest，多 Python 版本矩阵）  5 个并行 job
+    └── release-please.yml  → 自动化发版（分析 commit，创建/更新 Release PR）1 个 job
+
+push tag (v*.*.*)
+    └── publish.yml         → 发布到 PyPI
 ```
 
-三个 Workflow **并行运行**，互不依赖。
+四个 push/PR workflow **并行运行**，互不依赖。release-please 合入 PR 后自动创建 tag，触发 publish.yml。
 
 ### 3.6 CI 设计模式：lint 与 format 的分离
 
