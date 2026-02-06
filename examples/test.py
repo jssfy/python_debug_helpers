@@ -9,7 +9,7 @@ debug_helpers 使用示例
     或开发模式安装：pip install -e .
 """
 
-from debug_helpers import hello, add, print_dict, __version__
+from debug_helpers import add, hello, print_dict, __version__
 
 print("=" * 50)
 print(f"测试 debug_helpers v{__version__}")
@@ -45,28 +45,15 @@ print()
 nested_data = {
     "project": "debug_helpers",
     "version": "0.3.0",
-    "features": [
-        "hello",
-        "add",
-        "print_dict"
-    ],
-    "metadata": {
-        "author": "Example Author",
-        "date": "2026-01-24"
-    }
+    "features": ["hello", "add", "print_dict"],
+    "metadata": {"author": "Example Author", "date": "2026-01-24"},
 }
 print("嵌套字典:")
 print_dict(nested_data)
 print()
 
 # 包含列表的字典
-list_data = {
-    "users": [
-        {"name": "Alice", "age": 30},
-        {"name": "Bob", "age": 25}
-    ],
-    "tags": ["python", "debug", "tools"]
-}
+list_data = {"users": [{"name": "Alice", "age": 30}, {"name": "Bob", "age": 25}], "tags": ["python", "debug", "tools"]}
 print("包含列表的字典:")
 print_dict(list_data)
 print()

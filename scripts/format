@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+set -e
+
+cd "$(dirname "$0")/.."
+
+echo "==> Running ruff format"
+ruff format
+
+echo "==> Running ruff check --fix"
+ruff check --fix .
+
+# 再次格式化，修复 import 变更导致的格式不一致
+ruff format

@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+set -e
+
+cd "$(dirname "$0")/.."
+
+if [ "$1" = "--fix" ]; then
+  echo "==> Running ruff with --fix"
+  ruff check . --fix
+else
+  echo "==> Running ruff"
+  ruff check .
+fi
+
+echo "==> Running pyright"
+pyright
+
+echo "==> Running mypy"
+mypy src/
+
+echo "==> Making sure it imports"
+python -c 'import debug_helpers'
